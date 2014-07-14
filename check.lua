@@ -1,6 +1,7 @@
-
 local entries   = ARGV[2]
 local precision = ARGV[3]
+-- implement bloom filter scaling as a sequence of filters
+-- once a filter hits `entries` entries, start a new one
 local index     = redis.call('GET', ARGV[1] .. ':count')
 
 if not index then
@@ -54,4 +55,3 @@ for n=1, index do
 end
 
 return 0
-

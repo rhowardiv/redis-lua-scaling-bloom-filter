@@ -1,4 +1,3 @@
-
 local entries   = ARGV[2]
 local precision = ARGV[3]
 local hash      = redis.sha1hex(ARGV[4])
@@ -14,6 +13,8 @@ h[3] = tonumber(string.sub(hash, 25, 32), 16)
 
 for layer=1,32 do
   local key   = ARGV[1] .. ':' .. layer .. ':'
+  -- implement bloom filter scaling as a sequence of filters
+  -- once a filter hits `entries` entries, start a new one
   local index = math.ceil(redis.call('INCR', key .. 'count') / entries)
 
   key = key .. index
