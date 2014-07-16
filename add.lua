@@ -2,7 +2,8 @@
 local entries   = ARGV[2]
 local precision = ARGV[3]
 local hash      = redis.sha1hex(ARGV[4])
-local factor    = math.ceil((entries + redis.call('INCR', ARGV[1] .. ':count')) / entries) 
+local count     = redis.call('INCR', ARGV[1] .. ':count') 
+local factor    = math.ceil((entries + count) / entries) 
 -- 0.69314718055995 = ln(2)
 local index     = math.ceil(math.log(factor) / 0.69314718055995)
 local scale     = math.pow(2, index - 1) * entries
@@ -29,3 +30,11 @@ for i=1, k do
   redis.call('SETBIT', key, (h[i % 2] + i * h[2 + (((i + (i % 2)) % 4) / 2)]) % bits, 1)
 end
 
+-- set expiration on new keys
+if count == 1 then
+  redis.call('EXPIRE', ARGV[1] .. ':count', ARGV[5])
+end
+if count == 1 or (index > 1 and index - 1 == math.ceil(math.log(math.ceil((entries + count - 1) / entries)) / 0.69314718055995)) then
+  local expire = redis.call('PTTL', ARGV[1] .. ':count')
+  redis.call('PEXPIRE', key, math.max(0, expire))
+end
