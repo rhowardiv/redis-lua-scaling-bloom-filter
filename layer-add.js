@@ -82,7 +82,7 @@ function add(n, layer, id) {
     layer = 1 + Math.floor(n / layersize);
   }
 
-  client.evalsha(addsha, 0, 'test', entries, precision, id, function(err) {
+  client.evalsha(addsha, 0, 'test', entries, precision, id, 600, function(err) {
     if (err) {
       throw err;
     }

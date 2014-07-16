@@ -14,7 +14,9 @@ h[3] = tonumber(string.sub(hash, 25, 32), 16)
 
 for layer=1,32 do
   local key    = ARGV[1] .. ':' .. layer .. ':'
-  local factor = math.ceil((entries + redis.call('INCR', key .. 'count')) / entries)
+  local count_key = key .. 'count'
+  local count = redis.call('INCR', count_key)
+  local factor = math.ceil((entries + count) / entries)
   -- 0.69314718055995 = ln(2)
   local index  = math.ceil(math.log(factor) / 0.69314718055995)
   local scale  = math.pow(2, index - 1) * entries
@@ -36,9 +38,25 @@ for layer=1,32 do
     end
   end
 
-  -- if it wasn't found in this layer already break
+  -- set expiration on new keys
+  if count == 1 then
+    if layer == 1 then
+      redis.call('EXPIRE', count_key, ARGV[5])
+    else
+      local expire = redis.call('PTTL', ARGV[1] .. ':1:count')
+      redis.call('PEXPIRE', count_key, expire)
+    end
+  end
+
+  -- if it wasn't found in this layer already: break, after setting expiration
   if found == false then
+    if count == 1 or (index > 1 and index - 1 == math.ceil(math.log(math.ceil((entries + count - 1) / entries)) / 0.69314718055995)) then
+      -- always grab the expire from the layer 1 count key
+      local expire = redis.call('PTTL', ARGV[1] .. ':1:count')
+      redis.call('PEXPIRE', key, math.max(0, expire))
+    end
     break
   end
+
 end
 
