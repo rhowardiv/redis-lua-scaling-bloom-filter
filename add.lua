@@ -1,13 +1,13 @@
 
-local entries   = ARGV[2]
-local precision = ARGV[3]
-local hash      = redis.sha1hex(ARGV[4])
-local count     = redis.call('INCR', ARGV[1] .. ':count') 
+local entries   = ARGV[1]
+local precision = ARGV[2]
+local hash      = redis.sha1hex(ARGV[3])
+local count     = redis.call('INCR', KEYS[1] .. ':count') 
 local factor    = math.ceil((entries + count) / entries) 
 -- 0.69314718055995 = ln(2)
 local index     = math.ceil(math.log(factor) / 0.69314718055995)
 local scale     = math.pow(2, index - 1) * entries
-local key       = ARGV[1] .. ':' .. index
+local key       = KEYS[1] .. ':' .. index
 
 -- Based on the math from: http://en.wikipedia.org/wiki/Bloom_filter#Probability_of_false_positives
 -- Combined with: http://www.sciencedirect.com/science/article/pii/S0020019006003127
@@ -32,9 +32,9 @@ end
 
 -- set expiration on new keys
 if count == 1 then
-  redis.call('EXPIRE', ARGV[1] .. ':count', ARGV[5])
+  redis.call('EXPIRE', KEYS[1] .. ':count', ARGV[4])
 end
 if count == 1 or (index > 1 and index - 1 == math.ceil(math.log(math.ceil((entries + count - 1) / entries)) / 0.69314718055995)) then
-  local expire = redis.call('PTTL', ARGV[1] .. ':count')
+  local expire = redis.call('PTTL', KEYS[1] .. ':count')
   redis.call('PEXPIRE', key, math.max(0, expire))
 end

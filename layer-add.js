@@ -42,7 +42,7 @@ function check(n) {
     return;
   }
 
-  client.evalsha(checksha, 0, 'test', entries, precision, added[n], function(err, found) {
+  client.evalsha(checksha, 1, 'test', entries, precision, added[n], function(err, found) {
     if (err) {
       throw err;
     }
@@ -82,7 +82,7 @@ function add(n, layer, id) {
     layer = 1 + Math.floor(n / layersize);
   }
 
-  client.evalsha(addsha, 0, 'test', entries, precision, id, 600, function(err) {
+  client.evalsha(addsha, 1, 'test', entries, precision, id, 600, function(err) {
     if (err) {
       throw err;
     }

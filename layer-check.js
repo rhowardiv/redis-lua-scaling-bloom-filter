@@ -50,7 +50,7 @@ function check(n) {
 
   var id = Math.round(Math.random() * 4000000000);
 
-  client.evalsha(checksha, 0, 'test', entries, precision, id, function(err, layer) {
+  client.evalsha(checksha, 1, 'test', entries, precision, id, function(err, layer) {
     if (err) {
       throw err;
     }

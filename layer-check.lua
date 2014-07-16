@@ -1,7 +1,7 @@
 
-local entries   = ARGV[2]
-local precision = ARGV[3]
-local hash      = redis.sha1hex(ARGV[4])
+local entries   = ARGV[1]
+local precision = ARGV[2]
+local hash      = redis.sha1hex(ARGV[3])
 
 -- This uses a variation on:
 -- 'Less Hashing, Same Performance: Building a Better Bloom Filter'
@@ -13,7 +13,7 @@ h[2] = tonumber(string.sub(hash, 17, 24), 16)
 h[3] = tonumber(string.sub(hash, 25, 32), 16)
 
 for layer=1,32 do
-  local key   = ARGV[1] .. ':' .. layer .. ':'
+  local key   = KEYS[1] .. ':' .. layer .. ':'
   local count = redis.call('GET', key .. 'count')
 
   if not count then
@@ -68,5 +68,5 @@ for layer=1,32 do
   end
 end
 
-return 0
+return 32
 

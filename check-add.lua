@@ -1,7 +1,7 @@
 
-local entries   = ARGV[2]
-local precision = ARGV[3]
-local keyc      = ARGV[1] .. ':count'
+local entries   = ARGV[1]
+local precision = ARGV[2]
+local keyc      = KEYS[1] .. ':count'
 
 local count = redis.call('GET', keyc)
 if not count then
@@ -14,7 +14,7 @@ local factor = math.ceil((entries + count) / entries)
 local index = math.ceil(math.log(factor) / 0.69314718055995)
 local scale = math.pow(2, index - 1) * entries
 
-local hash = redis.sha1hex(ARGV[4])
+local hash = redis.sha1hex(ARGV[3])
 
 -- This uses a variation on:
 -- 'Less Hashing, Same Performance: Building a Better Bloom Filter'
@@ -40,7 +40,7 @@ for i=1, maxk do
 end
 
 for n=1, index do
-  key         = ARGV[1] .. ':' .. n
+  key         = KEYS[1] .. ':' .. n
   local found = true
   local scale = math.pow(2, n - 1) * entries
 
@@ -71,7 +71,7 @@ count = redis.call('INCR', keyc)
 
 -- set expiration on new keys
 if count == 1 then
-  redis.call('EXPIRE', keyc, ARGV[5])
+  redis.call('EXPIRE', keyc, ARGV[4])
 end
 if count == 1 or (index > 1 and index - 1 == math.ceil(math.log(math.ceil((entries + count - 1) / entries)) / 0.69314718055995)) then
   local expire = redis.call('PTTL', keyc)

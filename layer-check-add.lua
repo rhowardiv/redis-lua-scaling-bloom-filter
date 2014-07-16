@@ -1,7 +1,7 @@
 
-local entries   = ARGV[2]
-local precision = ARGV[3]
-local hash      = redis.sha1hex(ARGV[4])
+local entries   = ARGV[1]
+local precision = ARGV[2]
+local hash      = redis.sha1hex(ARGV[3])
 
 -- This uses a variation on:
 -- 'Less Hashing, Same Performance: Building a Better Bloom Filter'
@@ -13,7 +13,7 @@ h[2] = tonumber(string.sub(hash, 17, 24), 16)
 h[3] = tonumber(string.sub(hash, 25, 32), 16)
 
 for layer=1,32 do
-  local key   = ARGV[1] .. ':' .. layer .. ':'
+  local key   = KEYS[1] .. ':' .. layer .. ':'
   local keyc  = key .. 'count'
   local count = redis.call('GET', keyc)
 
@@ -79,16 +79,16 @@ for layer=1,32 do
     -- set expiration on new keys
     if count == 1 then
       if layer == 1 then
-        redis.call('EXPIRE', keyc, ARGV[5])
+        redis.call('EXPIRE', keyc, ARGV[4])
       else
         -- always grab the expire from the layer 1 count key
-        local expire = redis.call('PTTL', ARGV[1] .. ':1:count')
+        local expire = redis.call('PTTL', KEYS[1] .. ':1:count')
         redis.call('PEXPIRE', keyc, expire)
       end
     end
     if count == 1 or (index > 1 and index - 1 == math.ceil(math.log(math.ceil((entries + count - 1) / entries)) / 0.69314718055995)) then
       -- always grab the expire from the layer 1 count key
-      local expire = redis.call('PTTL', ARGV[1] .. ':1:count')
+      local expire = redis.call('PTTL', KEYS[1] .. ':1:count')
       redis.call('PEXPIRE', keyn, math.max(0, expire))
     end
 
@@ -96,5 +96,6 @@ for layer=1,32 do
   end
 end
 
-return 0
+-- You're already in the top layer... sorry
+return 32
 
